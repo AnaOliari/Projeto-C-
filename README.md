@@ -35,10 +35,10 @@
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/usuario/repositorio
+git clone https://github.com/AnaOliari/Projeto-C-.git
 
 # 2. Acesse a pasta do projeto
-cd nome-da-pasta
+cd .\Projeto-C-\
 
 # 3. Restaure os pacotes
 dotnet restore
