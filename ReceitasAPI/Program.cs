@@ -11,6 +11,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+{
+    options.SerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+});
+
 var app = builder.Build();
 
 app.UseHttpsRedirection();
@@ -45,6 +50,80 @@ app.MapDelete("/categorias/{id}", async (AppDbContext db, int id) =>
 
     db.Categorias.Remove(categoria);
     await db.SaveChangesAsync();
+    return Results.NoContent();
+});
+
+app.MapGet("/receitas", async (AppDbContext db) =>
+    await db.Receitas
+        .Include(r => r.Categoria)
+        .Include(r => r.Ingredientes)
+        .ToListAsync());
+
+
+app.MapPost("/receitas", async (AppDbContext db, Receita receita) =>
+{
+    // Verifica se a categoria existe
+    var categoria = await db.Categorias.FindAsync(receita.CategoriaId);
+    if (categoria is null) return Results.BadRequest("Categoria não encontrada.");
+
+    // Adiciona a receita com ingredientes
+    db.Receitas.Add(receita);
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/receitas/{receita.Id}", receita);
+});
+
+app.MapGet("/receitas/{id}", async (AppDbContext db, int id) =>
+{
+    var receita = await db.Receitas
+        .Include(r => r.Categoria)
+        .Include(r => r.Ingredientes)
+        .FirstOrDefaultAsync(r => r.Id == id);
+
+    return receita is not null ? Results.Ok(receita) : Results.NotFound();
+});
+
+app.MapPut("/receitas/{id}", async (AppDbContext db, int id, Receita input) =>
+{
+    var receita = await db.Receitas
+        .Include(r => r.Ingredientes)
+        .FirstOrDefaultAsync(r => r.Id == id);
+
+    if (receita is null)
+        return Results.NotFound();
+
+    var categoria = await db.Categorias.FindAsync(input.CategoriaId);
+    if (categoria is null)
+        return Results.BadRequest("Categoria não encontrada.");
+
+    // Atualiza os dados da receita
+    receita.Nome = input.Nome;
+    receita.ModoPreparo = input.ModoPreparo;
+    receita.CategoriaId = input.CategoriaId;
+
+    // Remove ingredientes antigos
+    db.Ingredientes.RemoveRange(receita.Ingredientes);
+
+    // Adiciona os novos ingredientes
+    receita.Ingredientes = input.Ingredientes.Select(i => new Ingrediente
+    {
+        Nome = i.Nome,
+        Quantidade = i.Quantidade
+    }).ToList();
+
+    await db.SaveChangesAsync();
+    return Results.Ok(receita);
+});
+
+app.MapDelete("/receitas/{id}", async (AppDbContext db, int id) =>
+{
+    var receita = await db.Receitas.FindAsync(id);
+    if (receita is null)
+        return Results.NotFound();
+
+    db.Receitas.Remove(receita);
+    await db.SaveChangesAsync();
+
     return Results.NoContent();
 });
 
