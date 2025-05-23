@@ -16,9 +16,27 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =
     options.SerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
 });
 
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(5299); // Permite acessar via 192.168.1.x:5299
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
 
-app.UseHttpsRedirection();
+// IMPORTANTE: CORS deve vir antes de outros middlewares
+app.UseCors();
+
+//app.UseHttpsRedirection();
 app.UseSwagger();
 app.UseSwaggerUI();
 
