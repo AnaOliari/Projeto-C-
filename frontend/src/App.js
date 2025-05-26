@@ -7,6 +7,8 @@ function App() {
   const [categorias, setCategorias] = useState([]);
   const [receitas, setReceitas] = useState([]);
   const [receitaEditando, setReceitaEditando] = useState(null);
+  const [categoriaEditando, setCategoriaEditando] = useState(null);
+  const [formCategoria, setFormCategoria] = useState({ nome: "" });
   const [form, setForm] = useState({
     nome: "",
     modoPreparo: "",
@@ -99,6 +101,60 @@ function App() {
     carregarReceitas();
   };
 
+  // Funções para gerenciamento de categorias
+  const handleCategoriaSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formCategoria.nome.trim()) return;
+    
+    if (categoriaEditando) {
+      // Editar categoria existente
+      await fetch(`${API}/categorias/${categoriaEditando}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formCategoria)
+      });
+      setCategoriaEditando(null);
+    } else {
+      // Criar nova categoria
+      await fetch(`${API}/categorias`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formCategoria)
+      });
+    }
+    
+    // Limpa o formulário e recarrega categorias
+    setFormCategoria({ nome: "" });
+    
+    // Recarregar lista de categorias
+    fetch(`${API}/categorias`)
+      .then(res => res.json())
+      .then(data => {
+        setCategorias(data);
+      })
+      .catch(err => console.error("Erro ao recarregar categorias:", err));
+  };
+
+  const editarCategoria = (categoria) => {
+    setFormCategoria({ nome: categoria.nome });
+    setCategoriaEditando(categoria.id);
+  };
+
+  const excluirCategoria = async (id) => {
+    try {
+      await fetch(`${API}/categorias/${id}`, { method: "DELETE" });
+      
+      // Recarregar lista de categorias
+      fetch(`${API}/categorias`)
+        .then(res => res.json())
+        .then(setCategorias);
+    } catch (error) {
+      console.error("Erro ao excluir categoria:", error);
+      alert("Não foi possível excluir a categoria. Ela pode estar sendo usada por alguma receita.");
+    }
+  };
+
   const editarReceita = (receita) => {
     // Prepara o formato dos ingredientes para o textarea
     const ingredientesTexto = receita.ingredientes
@@ -127,6 +183,82 @@ function App() {
 
       {loading && <p>Carregando categorias...</p>}
       {erro && <p style={{color: "red"}}>Erro ao carregar categorias: {erro}</p>}
+
+      <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: '#f0f8ff', borderRadius: '8px' }}>
+        <h2>Gerenciar Categorias</h2>
+        
+        {/* Formulário para adicionar/editar categorias */}
+        <form onSubmit={handleCategoriaSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+          <input
+            placeholder="Nome da categoria"
+            value={formCategoria.nome}
+            onChange={(e) => setFormCategoria({ nome: e.target.value })}
+            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '16px' }}
+            required
+          />
+          <button 
+            type="submit"
+            style={{ 
+              backgroundColor: categoriaEditando ? '#FF9800' : '#4CAF50', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '8px', 
+              padding: '10px 15px',
+              fontSize: '16px',
+              cursor: 'pointer'
+            }}
+          >
+            {categoriaEditando ? 'Atualizar' : 'Adicionar'}
+          </button>
+        </form>
+        
+        {/* Lista de categorias */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+          {categorias.map(cat => (
+            <div key={cat.id} style={{ 
+              backgroundColor: '#e1e1e1', 
+              padding: '10px 15px', 
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <span>{cat.nome}</span>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <button 
+                  onClick={() => editarCategoria(cat)}
+                  style={{ 
+                    backgroundColor: '#2196F3', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    padding: '5px 10px',
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Editar
+                </button>
+                <button 
+                  onClick={() => excluirCategoria(cat.id)}
+                  style={{ 
+                    backgroundColor: '#f44336', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    padding: '5px 10px',
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Excluir
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <h2>{receitaEditando ? 'Editar Receita' : 'Cadastrar Nova Receita'}</h2>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '30px' }}>
         <input
