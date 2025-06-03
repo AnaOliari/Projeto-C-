@@ -25,8 +25,15 @@
 
 ## 🚀 Como Executar o Projeto
 
-### Pré-requisitos
+### Front-end
+- [Front-end](https://github.com/AnaOliari/Projeto-C-/frontend)
+- npm start
 
+### Back-end
+- [Back-end](https://github.com/AnaOliari/Projeto-C-/ReceitasAPI)
+- dotnet run
+
+### Pré-requisitos
 - [.NET SDK 8.0+](https://dotnet.microsoft.com/en-us/download)
 - [SQLite](https://www.sqlite.org/download.html) (ou algum cliente de visualização como DB Browser for SQLite)
 - Git instalado
@@ -35,10 +42,10 @@
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/usuario/repositorio
+git clone https://github.com/AnaOliari/Projeto-C-.git
 
 # 2. Acesse a pasta do projeto
-cd nome-da-pasta
+cd .\Projeto-C-\
 
 # 3. Restaure os pacotes
 dotnet restore
